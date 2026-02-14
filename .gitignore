@@ -1,0 +1,8 @@
+node_modules/
+output/
+.DS_Store
+.venv-imagegen/
+playwright-browsers/
+tmp/
+package.json
+package-lock.json

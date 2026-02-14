@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gem Loop</title>
+    <link rel="stylesheet" href="styles.css?v=20260214u" />
+  </head>
+  <body>
+    <div id="rotate-overlay" class="rotate-overlay hidden" aria-live="polite">
+      <div class="rotate-card">
+        <div class="rotate-icon">↻</div>
+        <div class="rotate-title">Rotate device</div>
+        <div class="rotate-text">Please use landscape mode</div>
+      </div>
+    </div>
+    <div id="splash-screen" class="splash-screen">
+      <div class="splash-card">
+        <h1>Gem Loop</h1>
+        <p>Mini game series by Saw Aye Chan</p>
+        <p>Version 0.1</p>
+        <p>All rights reserved</p>
+      </div>
+    </div>
+    <main>
+      <section class="board-shell">
+        <canvas id="board-canvas" width="960" height="680"></canvas>
+        <div class="overlay-panel">
+          <div class="coin-stats">
+            <div class="coin-row"><span>Balance</span><strong id="coin-balance">300</strong></div>
+            <div class="coin-row"><span>Bet</span><strong id="coin-bet">0</strong></div>
+            <div class="coin-row"><span>Score</span><strong id="coin-score">0</strong></div>
+          </div>
+          <div id="status-text" class="status-text"></div>
+          <div class="center-controls">
+            <button id="mute-btn" class="icon-btn" type="button" aria-label="Sound on" title="Sound">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 9v6h4l5 4V5L7 9H3z"></path>
+                <path class="mute-slash" d="M4 4L20 20"></path>
+              </svg>
+            </button>
+            <button id="start-btn" disabled>START</button>
+            <button id="clear-bets" class="icon-btn" type="button" aria-label="Clear bets" title="Clear bets">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6L18 18"></path>
+                <path d="M18 6L6 18"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="game.js?v=20260214bb" type="module"></script>
+  </body>
+</html>
