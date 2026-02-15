@@ -263,29 +263,33 @@ function buildTiles(layout) {
     });
   };
 
-  const sideTopEdge = paddingY + layout.rowInset + layout.tileSize / 2 + layout.sideInset;
-  const sideBottomEdge = paddingY + usableY - layout.rowInset - layout.tileSize / 2 - layout.sideInset;
-  const portraitEdgeInset = layout.portraitMobile ? Math.max(32, Math.round(layout.tileSize * 0.46)) : 0;
-  const sideInnerTop = sideTopEdge + portraitEdgeInset;
-  const sideInnerBottom = sideBottomEdge - portraitEdgeInset;
-  const sideAvailable = sideInnerBottom - sideInnerTop;
-  const getSideStep = (count) => {
-    if (count <= 1) return layout.tileSize + sideTileGap;
-    const fitGap = (sideAvailable - count * layout.tileSize) / (count - 1);
-    if (layout.portraitMobile) {
-      return layout.tileSize + Math.max(2, fitGap);
+  const topCornerCenterY = paddingY + layout.rowInset;
+  const bottomCornerCenterY = paddingY + usableY - layout.rowInset;
+  const sideTopEdge = topCornerCenterY + layout.tileSize / 2 + layout.sideInset;
+  const sideBottomEdge = bottomCornerCenterY - layout.tileSize / 2 - layout.sideInset;
+  const sideAvailable = sideBottomEdge - sideTopEdge;
+  const buildPortraitSideMetrics = (count) => {
+    if (count <= 0) {
+      return { step: layout.tileSize + sideTileGap, startY: topCornerCenterY + layout.tileSize + sideTileGap };
     }
-    return layout.tileSize + sideTileGap;
+    // Equalize all vertical gaps: corner<->first, between sides, and last<->corner.
+    const centerSpan = bottomCornerCenterY - topCornerCenterY;
+    const gap = Math.max(2, centerSpan / (count + 1) - layout.tileSize);
+    const step = layout.tileSize + gap;
+    const startY = topCornerCenterY + step;
+    return { step, startY };
   };
-  const rightStep = getSideStep(layout.right);
-  const leftStep = getSideStep(layout.left);
+  const rightPortrait = buildPortraitSideMetrics(layout.right);
+  const leftPortrait = buildPortraitSideMetrics(layout.left);
+  const rightStep = layout.portraitMobile ? rightPortrait.step : layout.tileSize + sideTileGap;
+  const leftStep = layout.portraitMobile ? leftPortrait.step : layout.tileSize + sideTileGap;
   const rightStackHeight = layout.right * layout.tileSize + (layout.right - 1) * (rightStep - layout.tileSize);
   const leftStackHeight = layout.left * layout.tileSize + (layout.left - 1) * (leftStep - layout.tileSize);
   const rightStartY = layout.portraitMobile
-    ? sideInnerTop + layout.tileSize / 2
+    ? rightPortrait.startY
     : sideTopEdge + Math.max(0, (sideAvailable - rightStackHeight) / 2) + layout.tileSize / 2;
   const leftStartY = layout.portraitMobile
-    ? sideInnerTop + layout.tileSize / 2
+    ? leftPortrait.startY
     : sideTopEdge + Math.max(0, (sideAvailable - leftStackHeight) / 2) + layout.tileSize / 2;
 
   for (let i = 0; i < layout.top; i++) {
