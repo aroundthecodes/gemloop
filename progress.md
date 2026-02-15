@@ -5,3 +5,5 @@ Original prompt: there is a lot of gap or margin in top and bottom of the portra
 - Removed portrait constraints that could leave letterboxing (`max-height`/viewport-centered splash transform).
 - Bumped CSS/JS query versions in `index.html` to avoid stale-cache behavior.
 - Verified via Playwright screenshot at `375x667` (`output/portrait-mobile.png`): canvas fills full portrait viewport with no large top/bottom page margins.
+
+- Added GAME OVER restart flow: START button becomes RESTART and clicking it resets run state to initial values (coins/score/bets/streak/messages).

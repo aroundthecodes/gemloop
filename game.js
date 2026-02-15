@@ -645,6 +645,35 @@ function clearAllBets() {
   render();
 }
 
+function resetGameToInitialState() {
+  state.tileBets.clear();
+  state.spinning = false;
+  state.spinDuration = 0;
+  state.spinElapsed = 0;
+  state.spinDistance = 0;
+  state.spinTargetIndex = 0;
+  state.spinProgress = 0;
+  state.spinIntervals = [];
+  state.spinStepIndex = 0;
+  state.spinStepTimer = 0;
+  state.currentSpinnerIndex = 0;
+  state.coins = INITIAL_COINS;
+  state.currentScore = 0;
+  state.roundBet = 0;
+  state.winStreak = 0;
+  state.playDurationMs = 0;
+  state.roundsPlayed = 0;
+  state.statusMessage = IDLE_HINT_TEXT;
+  state.winnerTile = null;
+  state.mode = "idle";
+  state.resultTone = "neutral";
+  state.pendingResultTone = null;
+  state.toneRevealMs = 0;
+  state.gameOver = false;
+  instructionsPanel?.classList.remove("instructions-hidden");
+  updateStartState();
+}
+
 function dismissSplash() {
   if (!state.splashVisible || !splashScreen) return;
   state.splashVisible = false;
@@ -656,8 +685,12 @@ function dismissSplash() {
 
 function updateStartState() {
   syncGameOverState();
+  if (state.gameOver) {
+    startBtn.disabled = false;
+    return;
+  }
   const pendingBet = getPendingBet();
-  startBtn.disabled = state.gameOver || state.spinning || pendingBet === 0 || pendingBet > state.coins;
+  startBtn.disabled = state.spinning || pendingBet === 0 || pendingBet > state.coins;
 }
 
 function strokeRoundedRect(x, y, w, h, radius) {
@@ -700,11 +733,12 @@ function updateSelectionMessage() {
 function beginSpin() {
   if (state.splashVisible || state.orientationBlocked) return;
   syncGameOverState();
-  if (state.spinning || state.gameOver) {
-    if (state.gameOver) {
-      state.statusMessage = "GAME OVER";
-      render();
-    }
+  if (state.spinning) {
+    return;
+  }
+  if (state.gameOver) {
+    resetGameToInitialState();
+    render();
     return;
   }
   const roundBet = getPendingBet();
@@ -1062,6 +1096,7 @@ function render() {
   if (clearBetsBtn) {
     clearBetsBtn.disabled = controlsDisabled || getTotalBetUnits() === 0;
   }
+  startBtn.textContent = state.gameOver ? "RESTART" : "START";
 }
 
 function gameLoop(time) {
