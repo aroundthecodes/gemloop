@@ -959,7 +959,8 @@ function drawBoard() {
     ctx.fillStyle = "#fff";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    const labelFontSize = isHighlighted ? 16 : 13;
+    const mobileFontBoost = isMobileLikeDevice() ? 1.5 : 0;
+    const labelFontSize = (isHighlighted ? 16 : 13) + mobileFontBoost;
     ctx.font = `600 ${labelFontSize}px Inter`;
     ctx.shadowColor = "rgba(0,0,0,0.65)";
     ctx.shadowBlur = 6;
