@@ -803,13 +803,13 @@ function finalizeSpin() {
     state.highScore = Math.max(state.highScore, state.currentScore);
     saveHighScore(state.highScore);
     const highScoreMsg = state.highScore > previousHighScore ? ` New High Score: ${state.highScore}.` : "";
-    state.statusMessage = `YOU WIN! ${formatCurrency(winningBetAmount)} x ${effectiveMultiplier} = ${formatCurrency(winAmount)} (streak x${streakFactor}). Score +${scoreGain}.${highScoreMsg}`;
+    state.statusMessage = `YOU WIN!\n${formatCurrency(winningBetAmount)} x ${effectiveMultiplier} = ${formatCurrency(winAmount)} (streak x${streakFactor})\nScore +${scoreGain}.${highScoreMsg}`;
   } else {
     state.winStreak = 0;
     state.pendingResultTone = "lose";
     state.resultTone = "neutral";
     state.toneRevealMs = 220;
-    state.statusMessage = "YOU LOST. Try again.";
+    state.statusMessage = "YOU LOST\nTry again";
   }
 
   syncGameOverState();
