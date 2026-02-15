@@ -12,20 +12,12 @@ const betText = document.getElementById("coin-bet");
 const scoreText = document.getElementById("coin-score");
 const clearBetsBtn = document.getElementById("clear-bets");
 
-const boardWidth = 960;
-const boardHeight = 680;
+let boardWidth = 960;
+let boardHeight = 680;
 const paddingX = 56;
 const paddingY = 24;
-const usableX = boardWidth - paddingX * 2;
-const usableY = boardHeight - paddingY * 2;
-const topTileCount = 8;
-const bottomTileCount = 8;
-const rightWallTileCount = 4;
-const leftWallTileCount = 4;
-const topSpacing = usableX / (topTileCount - 1);
-const bottomSpacing = usableX / (bottomTileCount - 1);
-const tileSpacing = Math.min(topSpacing, bottomSpacing);
-const tileSize = Math.min(tileSpacing * 0.95, 96);
+let usableX = boardWidth - paddingX * 2;
+let usableY = boardHeight - paddingY * 2;
 const sideTileGap = 8;
 const INITIAL_COINS = 300;
 const BET_PER_TILE = 10;
@@ -42,8 +34,23 @@ const IDLE_HINT_TEXT = "Click on gems and press START";
 const USE_GEM_ASSETS = false;
 const PREFERS_REDUCED_MOTION = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 const HIGH_SCORE_KEY = "gem_loop_high_score";
-canvas.width = boardWidth;
-canvas.height = boardHeight;
+const LANDSCAPE_BOARD = { width: 960, height: 680 };
+const PORTRAIT_BASE_WIDTH = 680;
+
+function setBoardSize(width, height) {
+  boardWidth = width;
+  boardHeight = height;
+  usableX = boardWidth - paddingX * 2;
+  usableY = boardHeight - paddingY * 2;
+  canvas.width = boardWidth;
+  canvas.height = boardHeight;
+  canvas.style.aspectRatio = `${boardWidth} / ${boardHeight}`;
+  if (splashScreen) {
+    splashScreen.style.aspectRatio = `${boardWidth} / ${boardHeight}`;
+  }
+}
+
+setBoardSize(LANDSCAPE_BOARD.width, LANDSCAPE_BOARD.height);
 
 function loadHighScore() {
   try {
@@ -183,17 +190,63 @@ function loadGemAsset(name) {
   return img;
 }
 
-const cornerTopLeft = 0;
-const cornerTopRight = topTileCount - 1;
-const cornerBottomRight = topTileCount + rightWallTileCount;
-const cornerBottomLeft = topTileCount + rightWallTileCount + bottomTileCount - 1;
-const cornerIndices = new Set([cornerTopLeft, cornerTopRight, cornerBottomRight, cornerBottomLeft]);
 const bonusIndices = new Set([4, 9, 16, 21]);
 
-function buildTiles() {
-  const tiles = [];
-  const rowInset = tileSize / 2 + 1;
+function getLayoutCounts() {
+  const portrait = window.innerHeight > window.innerWidth;
+  if (isMobileLikeDevice() && portrait) {
+    // Portrait support: swap top/bottom with left/right density.
+    return { top: 4, bottom: 4, right: 8, left: 8 };
+  }
+  return { top: 8, bottom: 8, right: 4, left: 4 };
+}
+
+function getBoardSizeForViewport() {
+  const portrait = window.innerHeight > window.innerWidth;
+  if (isMobileLikeDevice() && portrait) {
+    const viewportW = Math.max(320, window.innerWidth);
+    const viewportH = Math.max(480, window.innerHeight);
+    const dynamicHeight = Math.round((PORTRAIT_BASE_WIDTH * viewportH) / viewportW);
+    return {
+      width: PORTRAIT_BASE_WIDTH,
+      height: Math.max(900, Math.min(1600, dynamicHeight)),
+    };
+  }
+  return LANDSCAPE_BOARD;
+}
+
+function getSideTileMax(count) {
   const sideInset = 2;
+  const numerator = usableY - 2 * (1 + sideInset) - (count - 1) * sideTileGap;
+  return numerator / (count + 2);
+}
+
+function buildBoardLayout() {
+  const counts = getLayoutCounts();
+  const portraitMobile = isMobileLikeDevice() && window.innerHeight > window.innerWidth;
+  const topSpacing = usableX / (counts.top - 1);
+  const bottomSpacing = usableX / (counts.bottom - 1);
+  const horizontalLimit = Math.min(topSpacing, bottomSpacing) * 0.95;
+  const verticalLimit = Math.min(getSideTileMax(counts.right), getSideTileMax(counts.left));
+  const tileSize = Math.min(horizontalLimit, verticalLimit, 96);
+  return {
+    ...counts,
+    topSpacing,
+    bottomSpacing,
+    tileSize,
+    sideInset: 2,
+    rowInset: tileSize / 2 + 1,
+    portraitMobile,
+  };
+}
+
+function buildTiles(layout) {
+  const tiles = [];
+  const cornerTopLeft = 0;
+  const cornerTopRight = layout.top - 1;
+  const cornerBottomRight = layout.top + layout.right;
+  const cornerBottomLeft = layout.top + layout.right + layout.bottom - 1;
+  const cornerIndices = new Set([cornerTopLeft, cornerTopRight, cornerBottomRight, cornerBottomLeft]);
   const addTile = (x, y, edge) => {
     const idx = tiles.length;
     const catalog = gemCatalog[idx % gemCatalog.length];
@@ -203,42 +256,59 @@ function buildTiles() {
       color: catalog.color,
       x,
       y,
-      width: tileSize,
-      height: tileSize,
+      width: layout.tileSize,
+      height: layout.tileSize,
       special: cornerIndices.has(idx) ? "jackpot" : null,
       multiplier: bonusIndices.has(idx) ? 1.5 : 1,
     });
   };
 
-  const rightStackHeight = rightWallTileCount * tileSize + (rightWallTileCount - 1) * sideTileGap;
-  const leftStackHeight = leftWallTileCount * tileSize + (leftWallTileCount - 1) * sideTileGap;
-  const sideTopEdge = paddingY + rowInset + tileSize / 2 + sideInset;
-  const sideBottomEdge = paddingY + usableY - rowInset - tileSize / 2 - sideInset;
-  const sideAvailable = sideBottomEdge - sideTopEdge;
-  const rightStartY = sideTopEdge + Math.max(0, (sideAvailable - rightStackHeight) / 2) + tileSize / 2;
-  const leftStartY = sideTopEdge + Math.max(0, (sideAvailable - leftStackHeight) / 2) + tileSize / 2;
+  const sideTopEdge = paddingY + layout.rowInset + layout.tileSize / 2 + layout.sideInset;
+  const sideBottomEdge = paddingY + usableY - layout.rowInset - layout.tileSize / 2 - layout.sideInset;
+  const portraitEdgeInset = layout.portraitMobile ? Math.max(32, Math.round(layout.tileSize * 0.46)) : 0;
+  const sideInnerTop = sideTopEdge + portraitEdgeInset;
+  const sideInnerBottom = sideBottomEdge - portraitEdgeInset;
+  const sideAvailable = sideInnerBottom - sideInnerTop;
+  const getSideStep = (count) => {
+    if (count <= 1) return layout.tileSize + sideTileGap;
+    const fitGap = (sideAvailable - count * layout.tileSize) / (count - 1);
+    if (layout.portraitMobile) {
+      return layout.tileSize + Math.max(2, fitGap);
+    }
+    return layout.tileSize + sideTileGap;
+  };
+  const rightStep = getSideStep(layout.right);
+  const leftStep = getSideStep(layout.left);
+  const rightStackHeight = layout.right * layout.tileSize + (layout.right - 1) * (rightStep - layout.tileSize);
+  const leftStackHeight = layout.left * layout.tileSize + (layout.left - 1) * (leftStep - layout.tileSize);
+  const rightStartY = layout.portraitMobile
+    ? sideInnerTop + layout.tileSize / 2
+    : sideTopEdge + Math.max(0, (sideAvailable - rightStackHeight) / 2) + layout.tileSize / 2;
+  const leftStartY = layout.portraitMobile
+    ? sideInnerTop + layout.tileSize / 2
+    : sideTopEdge + Math.max(0, (sideAvailable - leftStackHeight) / 2) + layout.tileSize / 2;
 
-  for (let i = 0; i < topTileCount; i++) {
-    const x = paddingX + i * topSpacing;
-    const y = paddingY + rowInset;
+  for (let i = 0; i < layout.top; i++) {
+    const x = paddingX + i * layout.topSpacing;
+    const y = paddingY + layout.rowInset;
     addTile(x, y, "top");
   }
 
-  for (let i = 0; i < rightWallTileCount; i++) {
+  for (let i = 0; i < layout.right; i++) {
     const x = paddingX + usableX;
-    const y = rightStartY + i * (tileSize + sideTileGap);
+    const y = rightStartY + i * rightStep;
     addTile(x, y, "right");
   }
 
-  for (let i = bottomTileCount - 1; i >= 0; i--) {
-    const x = paddingX + i * bottomSpacing;
-    const y = paddingY + usableY - rowInset;
+  for (let i = layout.bottom - 1; i >= 0; i--) {
+    const x = paddingX + i * layout.bottomSpacing;
+    const y = paddingY + usableY - layout.rowInset;
     addTile(x, y, "bottom");
   }
 
-  for (let i = leftWallTileCount - 1; i >= 0; i--) {
+  for (let i = layout.left - 1; i >= 0; i--) {
     const x = paddingX;
-    const y = leftStartY + i * (tileSize + sideTileGap);
+    const y = leftStartY + i * leftStep;
     addTile(x, y, "left");
   }
 
@@ -254,7 +324,8 @@ function buildTiles() {
   return tiles;
 }
 
-const tiles = buildTiles();
+let boardLayout = buildBoardLayout();
+let tiles = buildTiles(boardLayout);
 const gemTextureByName = new Map(gemCatalog.map((gem) => [gem.name, createGemTexture(gem.color)]));
 const gemAssetByName = new Map(gemCatalog.map((gem) => [gem.name, loadGemAsset(gem.name)]));
 
@@ -309,10 +380,37 @@ function isMobileLikeDevice() {
 }
 
 function updateOrientationGate() {
-  if (!rotateOverlay) return;
-  const portrait = window.innerHeight > window.innerWidth;
-  state.orientationBlocked = isMobileLikeDevice() && portrait;
-  rotateOverlay.classList.toggle("hidden", !state.orientationBlocked);
+  state.orientationBlocked = false;
+  rotateOverlay?.classList.add("hidden");
+  rebuildBoardForViewport();
+}
+
+function rebuildBoardForViewport() {
+  if (state.spinning) return;
+  const targetBoard = getBoardSizeForViewport();
+  const sizeChanged = boardWidth !== targetBoard.width || boardHeight !== targetBoard.height;
+  if (sizeChanged) {
+    setBoardSize(targetBoard.width, targetBoard.height);
+  }
+  const nextLayout = buildBoardLayout();
+  const hasLayoutChange =
+    boardLayout.top !== nextLayout.top ||
+    boardLayout.bottom !== nextLayout.bottom ||
+    boardLayout.left !== nextLayout.left ||
+    boardLayout.right !== nextLayout.right;
+  if (!hasLayoutChange && !sizeChanged) return;
+
+  boardLayout = nextLayout;
+  tiles = buildTiles(boardLayout);
+  state.tileBets.clear();
+  state.winnerTile = null;
+  state.resultTone = "neutral";
+  state.pendingResultTone = null;
+  state.toneRevealMs = 0;
+  state.currentSpinnerIndex = 0;
+  updateSelectionMessage();
+  updateStartState();
+  render();
 }
 
 function seededUnit(a, b = 0) {

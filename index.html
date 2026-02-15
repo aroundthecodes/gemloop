@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gem Loop</title>
-    <link rel="stylesheet" href="styles.css?v=20260214u" />
+    <link rel="stylesheet" href="styles.css?v=20260215a5" />
   </head>
   <body>
     <div id="rotate-overlay" class="rotate-overlay hidden" aria-live="polite">
@@ -33,23 +33,25 @@
           </div>
           <div id="status-text" class="status-text"></div>
           <div class="center-controls">
-            <button id="mute-btn" class="icon-btn" type="button" aria-label="Sound on" title="Sound">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 9v6h4l5 4V5L7 9H3z"></path>
-                <path class="mute-slash" d="M4 4L20 20"></path>
-              </svg>
-            </button>
             <button id="start-btn" disabled>START</button>
-            <button id="clear-bets" class="icon-btn" type="button" aria-label="Clear bets" title="Clear bets">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 6L18 18"></path>
-                <path d="M18 6L6 18"></path>
-              </svg>
-            </button>
+            <div class="control-icons">
+              <button id="mute-btn" class="icon-btn" type="button" aria-label="Sound on" title="Sound">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 9v6h4l5 4V5L7 9H3z"></path>
+                  <path class="mute-slash" d="M4 4L20 20"></path>
+                </svg>
+              </button>
+              <button id="clear-bets" class="icon-btn" type="button" aria-label="Clear bets" title="Clear bets">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6L18 18"></path>
+                  <path d="M18 6L6 18"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </section>
     </main>
-    <script src="game.js?v=20260214bb" type="module"></script>
+    <script src="game.js?v=20260215a9" type="module"></script>
   </body>
 </html>
